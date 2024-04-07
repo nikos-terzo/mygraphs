@@ -3,11 +3,14 @@ pub mod scale;
 
 use eframe::egui;
 use eframe::egui::epaint::{CircleShape, Color32, Pos2, Shape, Stroke, Vec2};
+
 use graph_view::GraphView;
+use scale::TryScale;
 
 #[derive(Default)]
 pub struct MyEguiApp {
     // pub graph_view_viewport: Option<Rect>,
+    pub graph_view: GraphView,
 }
 
 impl MyEguiApp {
@@ -31,44 +34,33 @@ impl eframe::App for MyEguiApp {
             }
         });
         egui::CentralPanel::default().show(ctx, |ui| {
-            // let viewport = match self.graph_view_viewport {
-            //     Some(v) => v,
-            //     None => {
-            //         let min = ui.next_widget_position();
-            //         Rect {
-            //             min,
-            //             max: min + GRAPH_VIEW_SIZE,
-            //         }
-            //     }
-            // };
-            let graph_view = ui.add(GraphView {
-                size: Vec2 { x: 500., y: 500. },
-                shapes: vec![
-                    Shape::Circle(CircleShape {
-                        center: Pos2 { x: 0., y: 0. },
-                        radius: 200.,
-                        fill: Color32::WHITE,
-                        stroke: Stroke {
-                            width: 10.,
-                            color: Color32::RED,
-                        },
-                    }),
-                    Shape::Circle(CircleShape {
-                        center: Pos2 { x: 110., y: 110. },
-                        radius: 40.,
-                        fill: Color32::BLUE,
-                        stroke: Stroke {
-                            width: 5.,
-                            color: Color32::RED,
-                        },
-                    }),
-                ],
-                // viewport,
-            });
+            let graph_view = ui.add(self.graph_view.clone());
 
             if graph_view.contains_pointer() {
-                let maybe_scroll = ctx.input(|i| i.zoom_delta());
-                println!("Scroll {:?}", maybe_scroll);
+                let pinch_neg = ctx.input(|i| i.zoom_delta());
+                println!("pinch {:?}", pinch_neg);
+                let scroll = ctx.input(|i| i.raw_scroll_delta);
+                println!("Scroll {:?}", scroll);
+
+                let Some(mouse_pos) = graph_view.hover_pos() else {
+                    println!("No mouse pos");
+                    return;
+                };
+                // TODO: Compare floats (epsilon)
+                if pinch_neg != 1.0 {
+                    self.graph_view.try_scale(pinch_neg).unwrap_or_else(|_| {
+                        println!("Failed to scale");
+                    });
+
+                    let translate = mouse_pos - mouse_pos*pinch_neg;
+                    self.graph_view.shapes.iter_mut().for_each(|shape| {
+                        shape.translate(translate);
+                    });
+                } else if scroll.x != 0.0 {
+                    self.graph_view.try_scale(0.01*scroll.x + 1.).unwrap_or_else(|_| {
+                        println!("Failed to scale");
+                    });
+                }
             }
         });
     }
