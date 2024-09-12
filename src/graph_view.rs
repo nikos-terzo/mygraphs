@@ -1,6 +1,13 @@
-use eframe::{egui::{Color32, Rect, Response, Rounding, Sense, Shape, Stroke, Ui, Vec2, Widget}, epaint::{CircleShape, Pos2}};
+use eframe::{
+    egui::{Color32, Rect, Response, Rounding, Sense, Shape, Stroke, Ui, Vec2, Widget},
+    epaint::{CircleShape, Pos2},
+};
 
 use crate::scale::{PaintCallbackNotSupported, TryScale};
+
+use crate::hexagonal_grid::{
+    generate_dr_line, generate_horizontal_line0, generate_horizontal_line1, generate_ur_line,
+};
 
 pub const MAX_SIZE_4K: Vec2 = Vec2 { x: 4096., y: 2160. };
 pub const MIN_GRAPH_VIEW_SIZE: Vec2 = Vec2 { x: 1280., y: 720. };
@@ -40,28 +47,46 @@ impl Widget for GraphView {
 /// TEMP
 impl Default for GraphView {
     fn default() -> Self {
+        let mut shapes = vec![];
+        for c_index in 0..100 {
+            for x_index in 0..100 {
+                let line_pos = generate_horizontal_line0(c_index, x_index);
+                shapes.push(Shape::LineSegment {
+                    points: line_pos,
+                    stroke: Stroke {
+                        width: 2.,
+                        color: Color32::BLUE,
+                    },
+                });
+                let line_pos = generate_horizontal_line1(c_index, x_index);
+                shapes.push(Shape::LineSegment {
+                    points: line_pos,
+                    stroke: Stroke {
+                        width: 2.,
+                        color: Color32::RED,
+                    },
+                });
+                let ur_line = generate_ur_line(c_index as i64 - 6, x_index as i64);
+                shapes.push(Shape::LineSegment {
+                    points: ur_line,
+                    stroke: Stroke {
+                        width: 2.,
+                        color: Color32::GREEN,
+                    },
+                });
+                let dr_line = generate_dr_line(c_index as i64 - 6, x_index as i64);
+                shapes.push(Shape::LineSegment {
+                    points: dr_line,
+                    stroke: Stroke {
+                        width: 2.,
+                        color: Color32::YELLOW,
+                    },
+                });
+            }
+        }
         Self {
             size: Vec2 { x: 500., y: 500. },
-            shapes: vec![
-                Shape::Circle(CircleShape {
-                    center: Pos2 { x: 0., y: 0. },
-                    radius: 200.,
-                    fill: Color32::WHITE,
-                    stroke: Stroke {
-                        width: 10.,
-                        color: Color32::RED,
-                    },
-                }),
-                Shape::Circle(CircleShape {
-                    center: Pos2 { x: 110., y: 110. },
-                    radius: 40.,
-                    fill: Color32::BLUE,
-                    stroke: Stroke {
-                        width: 5.,
-                        color: Color32::RED,
-                    },
-                }),
-            ],
+            shapes,
         }
     }
 }

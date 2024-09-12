@@ -1,11 +1,12 @@
 pub mod graph_view;
 pub mod scale;
+pub mod hexagonal_grid;
 
 use eframe::egui;
-use eframe::egui::epaint::{CircleShape, Color32, Pos2, Shape, Stroke, Vec2};
 
 use graph_view::GraphView;
 use scale::TryScale;
+
 
 #[derive(Default)]
 pub struct MyEguiApp {
@@ -52,14 +53,16 @@ impl eframe::App for MyEguiApp {
                         println!("Failed to scale");
                     });
 
-                    let translate = mouse_pos - mouse_pos*pinch_neg;
+                    let translate = mouse_pos - mouse_pos * pinch_neg;
                     self.graph_view.shapes.iter_mut().for_each(|shape| {
                         shape.translate(translate);
                     });
                 } else if scroll.x != 0.0 {
-                    self.graph_view.try_scale(0.01*scroll.x + 1.).unwrap_or_else(|_| {
-                        println!("Failed to scale");
-                    });
+                    self.graph_view
+                        .try_scale(0.01 * scroll.x + 1.)
+                        .unwrap_or_else(|_| {
+                            println!("Failed to scale");
+                        });
                 }
             }
         });
